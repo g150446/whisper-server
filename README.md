@@ -1,11 +1,11 @@
 # Whisper Server
 
-A FastAPI-based server for audio transcription using Faster Whisper. This server provides a REST API endpoint to transcribe audio files, optimized for Japanese language transcription.
+A FastAPI-based server for audio transcription using Faster Whisper. This server provides a REST API endpoint to transcribe audio files, with automatic language detection supporting English and Japanese.
 
 ## Features
 
 - Fast audio transcription using Faster Whisper
-- Optimized for Japanese language (`ja`)
+- Automatic language detection (English and Japanese)
 - Voice Activity Detection (VAD) to skip silent parts
 - CORS enabled for frontend integration
 - Automatic model downloading on first run
@@ -83,14 +83,19 @@ The server will start on `https://0.0.0.0:9000`
 
 Test the server using the microphone test script:
 
-**HTTP (default):**
+**Use remote server URL from .env (default):**
 ```bash
 python test_microphone.py
 ```
 
-**HTTPS:**
+**Use local server (localhost):**
 ```bash
-python test_microphone.py --https
+python test_microphone.py --local
+```
+
+**Use local server with HTTPS:**
+```bash
+python test_microphone.py --local --https
 ```
 
 The script will:
@@ -98,6 +103,13 @@ The script will:
 2. Stop when you press Enter
 3. Send the audio to the server for transcription
 4. Display the transcribed text
+
+**Configuration:**
+- Set the remote server URL in `.env` file:
+  ```
+  whisper-url="https://your-server-url.com"
+  ```
+- When using `--local` flag, the script connects to `http://localhost:9000/transcribe` or `https://localhost:9000/transcribe`
 
 ### API Endpoint
 

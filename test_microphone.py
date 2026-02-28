@@ -14,23 +14,40 @@ import threading
 import sys
 import os
 import argparse
+from dotenv import load_dotenv
 
 # 録音設定
 SAMPLE_RATE = 16000  # Whisperは16kHzを推奨
 CHANNELS = 1  # モノラル
 
+# 環境変数の読み込み
+load_dotenv()
+
 # コマンドライン引数の解析
 parser = argparse.ArgumentParser(description="Whisper Server マイクテスト")
-parser.add_argument("--https", action="store_true", help="HTTPSを使用（デフォルト: HTTP）")
+parser.add_argument("--local", action="store_true", help="ローカルサーバーを使用（デフォルト: .envのURLを使用）")
+parser.add_argument("--https", action="store_true", help="HTTPSを使用（デフォルト: HTTP、ローカルモード時のみ有効）")
 args = parser.parse_args()
 
 # サーバーURLの設定
-if args.https:
-    SERVER_URL = "https://localhost:9000/transcribe"
-    # 自己署名証明書の警告を抑制
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+if args.local:
+    if args.https:
+        SERVER_URL = "https://localhost:9000/transcribe"
+        # 自己署名証明書の警告を抑制
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    else:
+        SERVER_URL = "http://localhost:9000/transcribe"
 else:
-    SERVER_URL = "http://localhost:9000/transcribe"
+    # .envからwhisper-urlを読み込み
+    whisper_url = os.getenv("whisper-url")
+    if not whisper_url:
+        print("❌ エラー: .envファイルにwhisper-urlが設定されていません")
+        print("   --localフラグを使用するか、.envファイルにwhisper-urlを設定してください")
+        sys.exit(1)
+    
+    SERVER_URL = f"{whisper_url}/transcribe"
+    if whisper_url.startswith("https://"):
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def record_audio():
@@ -113,7 +130,7 @@ def send_to_whisper(audio_file_path):
         with open(audio_file_path, 'rb') as audio_file:
             files = {'audio_file': ('audio.wav', audio_file, 'audio/wav')}
             # HTTPSの場合は証明書検証をスキップ
-            verify_ssl = not args.https
+            verify_ssl = False if SERVER_URL.startswith("https://") else True
             response = requests.post(SERVER_URL, files=files, timeout=60, verify=verify_ssl)
 
         if response.status_code == 200:

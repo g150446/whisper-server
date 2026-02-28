@@ -200,7 +200,7 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
     """
     Accepts an audio file upload, transcribes it using Faster Whisper, and returns the text.
     
-    The transcription parameters are set for Japanese ('ja').
+    The language is auto-detected (supports English and Japanese).
     """
     if model is None:
         raise HTTPException(status_code=503, detail="Whisper model is not loaded or failed to initialize.")
@@ -224,8 +224,6 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
             segments, info = model.transcribe(
                 file_path,
                 beam_size=5,
-                # Explicitly set the source language to Japanese for better results and speed
-                language="ja", 
                 vad_filter=True, # Use Voice Activity Detection to skip silent parts
             )
             # Collect all segments into a list (since segments is an iterator)
